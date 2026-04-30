@@ -1,0 +1,25 @@
+﻿using TransporteEscolar.Relatorios.Domain.Entities;
+
+namespace TransporteEscolar.Relatorios.Application.Abstractions;
+
+public interface IPresencaHistoricaRepository
+{
+    Task<IReadOnlyCollection<PresencaHistorica>> ObterPorPeriodoAsync(
+        DateOnly inicio,
+        DateOnly fim,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyCollection<PresencaHistorica>> ObterPorAlunoEPeriodoAsync(
+        Guid alunoId,
+        DateOnly inicio,
+        DateOnly fim,
+        CancellationToken cancellationToken = default);
+    Task<bool> ExistePorAlunoEDataAsync(
+    Guid alunoId,
+    DateOnly data,
+    CancellationToken cancellationToken = default);
+
+    Task AdicionarAsync(
+        PresencaHistorica presenca,
+        CancellationToken cancellationToken = default);
+}
