@@ -2,6 +2,7 @@ using TransporteEscolar.Relatorios.Api.Extensions;
 using TransporteEscolar.Relatorios.Application.Abstractions;
 using TransporteEscolar.Relatorios.Application.Services;
 using TransporteEscolar.Relatorios.Infrastructure.DependencyInjection;
+using TransporteEscolar.Relatorios.Infrastructure.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,8 @@ builder.Services.AddScoped<IFrequenciaAlunoService, FrequenciaAlunoService>();
 builder.Services.AddScoped<IKmService, KmService>();
 builder.Services.AddScoped<IIndicadorOperacionalService, IndicadorOperacionalService>();
 builder.Services.AddScoped<ISyncHistoricoService, SyncHistoricoService>();
+
+builder.Services.AddHostedService<PresencaConsumer>();
 
 var app = builder.Build();
 
