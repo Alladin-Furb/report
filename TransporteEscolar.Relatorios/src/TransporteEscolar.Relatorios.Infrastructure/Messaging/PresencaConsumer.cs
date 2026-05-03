@@ -73,10 +73,23 @@ public class PresencaConsumer : BackgroundService
             try
             {
                 var json = Encoding.UTF8.GetString(ea.Body.ToArray());
+                _logger.LogDebug("Mensagem recebida: {Json}", json);
+
                 var dto = JsonSerializer.Deserialize<PresencaRecebidaDto>(json,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                if (dto is null) return;
+                if (dto is null)
+                {
+                    await _channel!.BasicAckAsync(ea.DeliveryTag, false);
+                    return;
+                }
+
+                if (!DateOnly.TryParse(dto.DataPresenca, out var dataPresenca))
+                {
+                    _logger.LogWarning("Data inválida recebida: {Data}", dto.DataPresenca);
+                    await _channel!.BasicAckAsync(ea.DeliveryTag, false);
+                    return;
+                }
 
                 using var scope = _scopeFactory.CreateScope();
                 var alunoRepo = scope.ServiceProvider.GetRequiredService<IAlunoSnapshotRepository>();
@@ -85,13 +98,13 @@ public class PresencaConsumer : BackgroundService
                 var aluno = await alunoRepo.BuscarPorExternalIdAsync(dto.AlunoId, stoppingToken);
                 if (aluno is null)
                 {
-                    _logger.LogWarning("Aluno externo {ExternalId} não encontrado no snapshot.", dto.AlunoId);
+                    _logger.LogWarning("AlunoSnapshot não encontrado para ExternalId {Id}.", dto.AlunoId);
                     await _channel!.BasicAckAsync(ea.DeliveryTag, false);
                     return;
                 }
 
                 var jaExiste = await presencaRepo.ExistePorAlunoEDataAsync(
-                    aluno.Id, dto.DataPresenca, stoppingToken);
+                    aluno.Id, dataPresenca, stoppingToken); 
 
                 if (!jaExiste)
                 {
@@ -99,12 +112,16 @@ public class PresencaConsumer : BackgroundService
                     {
                         Id = Guid.NewGuid(),
                         AlunoId = aluno.Id,
-                        Data = dto.DataPresenca,
+                        Data = dataPresenca,
                         ConfirmouPresenca = dto.Status == "PRESENTE",
-                        CancelouPresenca = dto.Status == "CANCELADO"
+                        CancelouPresenca = dto.Status is "CANCELADO" or "FALTA_NAO_JUSTIFICADA" or "FALTA_JUSTIFICADA"
                     }, stoppingToken);
 
-                    _logger.LogInformation("Presença do aluno {Nome} em {Data} salva.", aluno.Nome, dto.DataPresenca);
+                    _logger.LogInformation("Presença de {Nome} em {Data} salva.", aluno.Nome, dataPresenca);
+                }
+                else
+                {
+                    _logger.LogInformation("Presença de {Nome} em {Data} já existe, ignorando.", aluno.Nome, dataPresenca);
                 }
 
                 await _channel!.BasicAckAsync(ea.DeliveryTag, false);
@@ -112,7 +129,7 @@ public class PresencaConsumer : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao processar mensagem de presença.");
-                await _channel!.BasicNackAsync(ea.DeliveryTag, false, requeue: true);
+                await _channel!.BasicNackAsync(ea.DeliveryTag, false, requeue: false);
             }
         };
 
