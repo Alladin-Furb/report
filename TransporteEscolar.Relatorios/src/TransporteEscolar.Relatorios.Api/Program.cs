@@ -19,6 +19,7 @@ builder.Services.AddScoped<IIndicadorOperacionalService, IndicadorOperacionalSer
 builder.Services.AddScoped<ISyncHistoricoService, SyncHistoricoService>();
 
 builder.Services.AddHostedService<PresencaConsumer>();
+builder.Services.AddHostedService<AlunoConsumer>();
 
 var app = builder.Build();
 

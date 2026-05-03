@@ -11,18 +11,18 @@ using TransporteEscolar.Relatorios.Domain.Entities;
 
 namespace TransporteEscolar.Relatorios.Infrastructure.Messaging;
 
-public class PresencaConsumer : BackgroundService
+public class AlunoConsumer : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IConfiguration _configuration;
-    private readonly ILogger<PresencaConsumer> _logger;
+    private readonly ILogger<AlunoConsumer> _logger;
     private IConnection? _connection;
     private IChannel? _channel;
 
-    public PresencaConsumer(
+    public AlunoConsumer(
         IServiceScopeFactory scopeFactory,
         IConfiguration configuration,
-        ILogger<PresencaConsumer> logger)
+        ILogger<AlunoConsumer> logger)
     {
         _scopeFactory = scopeFactory;
         _configuration = configuration;
@@ -43,23 +43,22 @@ public class PresencaConsumer : BackgroundService
         _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
         await _channel.ExchangeDeclareAsync(
-            exchange: "presenca.events",
+            exchange: "aluno.events",
             type: ExchangeType.Topic,
             durable: true,
             cancellationToken: cancellationToken);
 
-        await _channel.QueueDeclareAsync(
-            queue: "relatorio.presenca.registrada",
-            durable: true,
-            exclusive: false,
-            autoDelete: false,
-            cancellationToken: cancellationToken);
-
-        await _channel.QueueBindAsync(
-            queue: "relatorio.presenca.registrada",
-            exchange: "presenca.events",
-            routingKey: "presenca.registrada",
-            cancellationToken: cancellationToken);
+        foreach (var (queue, routingKey) in new[]
+        {
+            ("relatorio.aluno.cadastrado", "aluno.cadastrado"),
+            ("relatorio.aluno.atualizado", "aluno.atualizado")
+        })
+        {
+            await _channel.QueueDeclareAsync(queue, durable: true, exclusive: false,
+                autoDelete: false, cancellationToken: cancellationToken);
+            await _channel.QueueBindAsync(queue, "aluno.events", routingKey,
+                cancellationToken: cancellationToken);
+        }
 
         await base.StartAsync(cancellationToken);
     }
@@ -73,54 +72,50 @@ public class PresencaConsumer : BackgroundService
             try
             {
                 var json = Encoding.UTF8.GetString(ea.Body.ToArray());
-                var dto = JsonSerializer.Deserialize<PresencaRecebidaDto>(json,
+                var dto = JsonSerializer.Deserialize<AlunoRecebidoDto>(json,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                if (dto is null) return;
-
-                using var scope = _scopeFactory.CreateScope();
-                var alunoRepo = scope.ServiceProvider.GetRequiredService<IAlunoSnapshotRepository>();
-                var presencaRepo = scope.ServiceProvider.GetRequiredService<IPresencaHistoricaRepository>();
-
-                var aluno = await alunoRepo.BuscarPorExternalIdAsync(dto.AlunoId, stoppingToken);
-                if (aluno is null)
+                if (dto is null || dto.Id == 0)
                 {
-                    _logger.LogWarning("Aluno externo {ExternalId} não encontrado no snapshot.", dto.AlunoId);
                     await _channel!.BasicAckAsync(ea.DeliveryTag, false);
                     return;
                 }
 
-                var jaExiste = await presencaRepo.ExistePorAlunoEDataAsync(
-                    aluno.Id, dto.DataPresenca, stoppingToken);
+                using var scope = _scopeFactory.CreateScope();
+                var repo = scope.ServiceProvider.GetRequiredService<IAlunoSnapshotRepository>();
 
-                if (!jaExiste)
+                var existente = await repo.BuscarPorExternalIdAsync(dto.Id, stoppingToken);
+
+                if (existente is null)
                 {
-                    await presencaRepo.AdicionarAsync(new PresencaHistorica
+                    await repo.AdicionarAsync(new AlunoSnapshot
                     {
                         Id = Guid.NewGuid(),
-                        AlunoId = aluno.Id,
-                        Data = dto.DataPresenca,
-                        ConfirmouPresenca = dto.Status == "PRESENTE",
-                        CancelouPresenca = dto.Status == "CANCELADO"
+                        ExternalId = dto.Id,
+                        Nome = dto.Nome,
+                        Ativo = true
                     }, stoppingToken);
-
-                    _logger.LogInformation("Presença do aluno {Nome} em {Data} salva.", aluno.Nome, dto.DataPresenca);
+                    _logger.LogInformation("AlunoSnapshot criado para ExternalId {Id} ({Nome})", dto.Id, dto.Nome);
+                }
+                else
+                {
+                    existente.Nome = dto.Nome;
+                    existente.Ativo = true;
+                    await repo.AtualizarAsync(existente, stoppingToken);
+                    _logger.LogInformation("AlunoSnapshot atualizado para ExternalId {Id} ({Nome})", dto.Id, dto.Nome);
                 }
 
                 await _channel!.BasicAckAsync(ea.DeliveryTag, false);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro ao processar mensagem de presença.");
+                _logger.LogError(ex, "Erro ao processar evento de aluno.");
                 await _channel!.BasicNackAsync(ea.DeliveryTag, false, requeue: true);
             }
         };
 
-        await _channel!.BasicConsumeAsync(
-            queue: "relatorio.presenca.registrada",
-            autoAck: false,
-            consumer: consumer,
-            cancellationToken: stoppingToken);
+        await _channel!.BasicConsumeAsync("relatorio.aluno.cadastrado", autoAck: false, consumer: consumer, cancellationToken: stoppingToken);
+        await _channel!.BasicConsumeAsync("relatorio.aluno.atualizado", autoAck: false, consumer: consumer, cancellationToken: stoppingToken);
 
         await Task.Delay(Timeout.Infinite, stoppingToken);
     }
