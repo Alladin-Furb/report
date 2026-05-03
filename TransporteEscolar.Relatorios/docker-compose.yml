@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "8083:8080"
     environment:
       - ConnectionStrings__RelatoriosDb=Host=postgres;Port=5432;Database=transporte_escolar_relatorios;Username=postgres;Password=postgres
     depends_on:
@@ -14,7 +14,7 @@ services:
   postgres:
     image: postgres:17
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
