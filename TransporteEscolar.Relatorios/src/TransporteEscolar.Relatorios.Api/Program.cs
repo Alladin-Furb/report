@@ -17,13 +17,20 @@ builder.Services.AddScoped<IFrequenciaAlunoService, FrequenciaAlunoService>();
 builder.Services.AddScoped<IKmService, KmService>();
 builder.Services.AddScoped<IIndicadorOperacionalService, IndicadorOperacionalService>();
 builder.Services.AddScoped<ISyncHistoricoService, SyncHistoricoService>();
+builder.Services.AddScoped<ISolicitacaoRelatorioService, SolicitacaoRelatorioService>();
+builder.Services.AddScoped<IProcessadorRelatorioService, ProcessadorRelatorioService>();
+builder.Services.AddScoped<IGeradorRelatorioService, GeradorRelatorioService>();
 
 builder.Services.AddHostedService<PresencaConsumer>();
 builder.Services.AddHostedService<AlunoConsumer>();
+builder.Services.AddHostedService<RelatorioDispatcher>();
+builder.Services.AddHostedService<RelatorioWorker>();
 
 var app = builder.Build();
 
 app.UseGlobalExceptionMiddleware();
+
+await app.ApplyDatabaseMigrationsAsync();
 
 if (app.Environment.IsDevelopment())
 {
@@ -31,7 +38,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 

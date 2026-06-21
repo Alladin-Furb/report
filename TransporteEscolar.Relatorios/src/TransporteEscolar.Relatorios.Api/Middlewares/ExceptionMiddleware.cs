@@ -50,6 +50,7 @@ public class ExceptionMiddleware
             BusinessException => (int)HttpStatusCode.BadRequest,
             NotFoundException => (int)HttpStatusCode.NotFound,
             ConflictException => (int)HttpStatusCode.Conflict,
+            ForbiddenException => (int)HttpStatusCode.Forbidden,
             ArgumentException => (int)HttpStatusCode.BadRequest,
             KeyNotFoundException => (int)HttpStatusCode.NotFound,
             UnauthorizedAccessException => (int)HttpStatusCode.Unauthorized,

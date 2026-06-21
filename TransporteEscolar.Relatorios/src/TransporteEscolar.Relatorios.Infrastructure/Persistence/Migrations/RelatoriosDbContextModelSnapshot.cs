@@ -41,6 +41,10 @@ namespace TransporteEscolar.Relatorios.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ExternalId")
+                        .IsUnique()
+                        .HasFilter("\"ExternalId\" <> 0");
+
                     b.ToTable("alunos_snapshot", (string)null);
                 });
 
@@ -76,6 +80,9 @@ namespace TransporteEscolar.Relatorios.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("AlunoId");
 
+                    b.HasIndex("AlunoId", "Data")
+                        .IsUnique();
+
                     b.ToTable("presencas_historicas", (string)null);
                 });
 
@@ -98,6 +105,69 @@ namespace TransporteEscolar.Relatorios.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("rotas_historicas", (string)null);
+                });
+
+            modelBuilder.Entity("TransporteEscolar.Relatorios.Domain.Entities.SolicitacaoRelatorio", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Ano")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("AtualizadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ConcluidoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Erro")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("IniciadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Mes")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PapelSolicitante")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<long?>("ProfileIdSolicitante")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ResultadoJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("Tentativas")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CriadoEm");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("ProfileIdSolicitante", "CriadoEm");
+
+                    b.ToTable("solicitacoes_relatorio", (string)null);
                 });
 
             modelBuilder.Entity("TransporteEscolar.Relatorios.Domain.Entities.PresencaHistorica", b =>

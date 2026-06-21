@@ -1,7 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TransporteEscolar.Relatorios.Application.Abstractions;
+using TransporteEscolar.Relatorios.Infrastructure.Caching;
+using TransporteEscolar.Relatorios.Infrastructure.Exporting;
+using TransporteEscolar.Relatorios.Infrastructure.Messaging;
 using TransporteEscolar.Relatorios.Infrastructure.Persistence.Context;
 using TransporteEscolar.Relatorios.Infrastructure.Persistence.Repositories;
 
@@ -16,17 +20,34 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("RelatoriosDb");
 
         services.AddDbContext<RelatoriosDbContext>(options =>
-            options.UseNpgsql(connectionString));
+            options
+                .UseNpgsql(connectionString)
+                .ConfigureWarnings(warnings =>
+                    warnings.Ignore(RelationalEventId.PendingModelChangesWarning)));
 
         services.AddScoped<IAlunoSnapshotRepository, AlunoSnapshotRepository>();
         services.AddScoped<IPresencaHistoricaRepository, PresencaHistoricaRepository>();
         services.AddScoped<IRotaHistoricaRepository, RotaHistoricaRepository>();
+        services.AddScoped<ISolicitacaoRelatorioRepository, SolicitacaoRelatorioRepository>();
+        services.AddSingleton<IExportadorRelatorioService, ExportadorRelatorioService>();
+
+        services.Configure<RabbitMqOptions>(
+            configuration.GetSection(RabbitMqOptions.SectionName));
+        services.AddSingleton<IRabbitMqConnectionProvider, RabbitMqConnectionProvider>();
+
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = configuration.GetConnectionString("Redis") ?? "redis:6379";
+            options.InstanceName = "transporte-escolar:";
+        });
+        services.AddSingleton<IRelatorioCacheService, RedisRelatorioCacheService>();
 
         var presencaBaseUrl = configuration["PresencaService:BaseUrl"];
 
         services.AddHttpClient("presenca-service", client =>
         {
             client.BaseAddress = new Uri(presencaBaseUrl!);
+            client.DefaultRequestHeaders.Add("X-User-Role", "ROLE_ADMIN");
         });
 
         return services;

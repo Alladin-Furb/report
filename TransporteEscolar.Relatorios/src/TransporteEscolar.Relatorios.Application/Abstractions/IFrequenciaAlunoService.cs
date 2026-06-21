@@ -10,6 +10,12 @@ public interface IFrequenciaAlunoService
         int mes,
         CancellationToken cancellationToken = default);
 
+    Task<FrequenciaAlunoDto> CalcularPorExternalIdAsync(
+        long externalId,
+        int ano,
+        int mes,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyCollection<FrequenciaAlunoDto>> CalcularTodosAsync(
         int ano,
         int mes,

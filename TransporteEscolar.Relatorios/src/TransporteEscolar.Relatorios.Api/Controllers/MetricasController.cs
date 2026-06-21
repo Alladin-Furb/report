@@ -20,6 +20,29 @@ public class MetricasController : ControllerBase
         _kmService = kmService;
     }
 
+    [HttpGet("frequencia/me")]
+    [ProducesResponseType(typeof(FrequenciaAlunoDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetMinhaFrequencia(
+        [FromHeader(Name = "X-Profile-Id")] long? profileId,
+        [FromQuery] int ano,
+        [FromQuery] int mes,
+        CancellationToken cancellationToken)
+    {
+        if (profileId is null or <= 0)
+            return StatusCode(StatusCodes.Status403Forbidden);
+
+        if (ano <= 0 || mes is < 1 or > 12)
+            return BadRequest("Ano ou mês inválido.");
+
+        var resultado = await _frequenciaAlunoService.CalcularPorExternalIdAsync(
+            profileId.Value,
+            ano,
+            mes,
+            cancellationToken);
+        return Ok(resultado);
+    }
+
     [HttpGet("frequencia/alunos/{alunoId:guid}")]
     [ProducesResponseType(typeof(FrequenciaAlunoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

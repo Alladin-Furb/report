@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\TransporteEscolar.Relatorios.Application\TransporteEscolar.Relatorios.Application.csproj" />
     <ProjectReference Include="..\..\src\TransporteEscolar.Relatorios.Domain\TransporteEscolar.Relatorios.Domain.csproj" />
+    <ProjectReference Include="..\..\src\TransporteEscolar.Relatorios.Infrastructure\TransporteEscolar.Relatorios.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
