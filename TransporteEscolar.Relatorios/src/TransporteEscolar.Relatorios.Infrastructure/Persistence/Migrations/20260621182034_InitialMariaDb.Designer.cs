@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TransporteEscolar.Relatorios.Infrastructure.Persistence.Context;
 
@@ -11,9 +12,11 @@ using TransporteEscolar.Relatorios.Infrastructure.Persistence.Context;
 namespace TransporteEscolar.Relatorios.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(RelatoriosDbContext))]
-    partial class RelatoriosDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260621182034_InitialMariaDb")]
+    partial class InitialMariaDb
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

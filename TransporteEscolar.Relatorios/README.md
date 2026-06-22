@@ -3,10 +3,10 @@
 Microsserviço responsável por consolidar dados de alunos, presenças e rotas,
 calcular indicadores e gerar relatórios assíncronos em JSON, PDF e CSV.
 
-O serviço foi desenvolvido em **.NET 10** e usa:
+O serviço foi desenvolvido em **.NET 9** e usa:
 
 - **RabbitMQ** para mensageria e processamento assíncrono;
-- **PostgreSQL** como fonte permanente de dados;
+- **MariaDB 11.2** como fonte permanente de dados;
 - **Redis** como cache opcional;
 - **Entity Framework Core** para persistência e migrations;
 - **QuestPDF** para geração de PDF;
@@ -26,7 +26,7 @@ O serviço:
 - recebe solicitações de relatório sem bloquear a requisição HTTP;
 - processa relatórios em segundo plano;
 - controla status, tentativas e erros de processamento;
-- mantém os resultados JSON no PostgreSQL;
+- mantém os resultados JSON no MariaDB;
 - disponibiliza PDF e CSV gerados sob demanda;
 - aplica autorização e propriedade dos relatórios individuais;
 - permite sincronização manual com o serviço de presenças.
@@ -53,7 +53,7 @@ TransporteEscolar.Relatorios.Domain
 └── enums de domínio
 
 TransporteEscolar.Relatorios.Infrastructure
-├── PostgreSQL e repositórios
+├── MariaDB e repositórios
 ├── RabbitMQ
 ├── Redis
 └── exportação PDF/CSV
@@ -76,7 +76,7 @@ flowchart LR
     Attendance -->|presenca.events| Rabbit
     Rabbit --> Report
 
-    Report --> Postgres["PostgreSQL"]
+    Report --> MariaDb["MariaDB"]
     Report --> Redis["Redis"]
     Report --> Rabbit
     Report -->|sincronização HTTP| Attendance
@@ -96,13 +96,13 @@ próprio serviço. Assim, a segurança não depende exclusivamente do Gateway.
 ## Processamento assíncrono dos relatórios
 
 Uma solicitação HTTP não executa o cálculo completo do relatório. Ela apenas
-registra o trabalho no PostgreSQL e retorna `202 Accepted`.
+registra o trabalho no MariaDB e retorna `202 Accepted`.
 
 ```mermaid
 sequenceDiagram
     participant C as Cliente
     participant API as Report API
-    participant DB as PostgreSQL
+    participant DB as MariaDB
     participant D as Dispatcher
     participant MQ as RabbitMQ
     participant W as Worker
@@ -133,7 +133,7 @@ sequenceDiagram
     API-->>C: status e resultado
 ```
 
-### Por que o PostgreSQL é gravado antes da fila?
+### Por que o MariaDB é gravado antes da fila?
 
 O banco é a fonte de verdade. Se RabbitMQ estiver temporariamente indisponível,
 a solicitação permanece como `PENDENTE` e poderá ser publicada posteriormente.
@@ -191,7 +191,7 @@ Exemplo de mensagem:
 ```
 
 A mensagem não carrega todos os dados do relatório. O worker consulta o
-PostgreSQL pelo ID, reduzindo o tamanho da mensagem e mantendo o banco como
+MariaDB pelo ID, reduzindo o tamanho da mensagem e mantendo o banco como
 fonte oficial.
 
 ### Eventos de alunos
@@ -241,7 +241,7 @@ O RabbitMQ trabalha com entrega **at least once**: uma mensagem pode ser entregu
 mais de uma vez. Por isso, o consumidor precisa ser idempotente.
 
 Antes do cálculo, o repositório executa uma atualização condicional no
-PostgreSQL. A solicitação só entra em processamento quando:
+MariaDB. A solicitação só entra em processamento quando:
 
 - ainda não está `CONCLUIDO`;
 - não está sendo processada;
@@ -276,9 +276,9 @@ DLQ.
 
 ## Persistência
 
-### PostgreSQL
+### MariaDB
 
-O PostgreSQL é a fonte permanente e armazena:
+O MariaDB é a fonte permanente e armazena:
 
 - `alunos_snapshot`;
 - `presencas_historicas`;
@@ -300,7 +300,7 @@ Uma solicitação contém:
 - datas de criação, atualização, início e conclusão.
 
 Há índices para status, data de criação e histórico por perfil. O resultado fica
-em uma coluna `jsonb`.
+em uma coluna `longtext`, mantendo o conteúdo serializado como JSON.
 
 ### Redis
 
@@ -315,7 +315,7 @@ O TTL é de 24 horas.
 Fluxo de consulta:
 
 1. tenta buscar no Redis;
-2. em cache miss ou indisponibilidade, consulta PostgreSQL;
+2. em cache miss ou indisponibilidade, consulta MariaDB;
 3. se o relatório estiver concluído, repopula o cache;
 4. devolve a resposta ao cliente.
 
@@ -382,7 +382,7 @@ e são gerados somente quando o usuário solicita o download.
 
 Nenhum arquivo binário é salvo no:
 
-- PostgreSQL;
+- MariaDB;
 - Redis;
 - RabbitMQ;
 - filesystem;
@@ -550,9 +550,9 @@ eventos.
 
 | Tecnologia | Papel |
 |---|---|
-| .NET 10 / ASP.NET Core | API e serviços em segundo plano |
+| .NET 9 / ASP.NET Core | API e serviços em segundo plano |
 | Entity Framework Core | ORM e migrations |
-| PostgreSQL 17 | persistência permanente |
+| MariaDB 11.2 | persistência permanente |
 | RabbitMQ 3.13 | eventos, fila de trabalho e DLQ |
 | Redis 7.4 | cache opcional |
 | QuestPDF | exportação PDF |
@@ -565,7 +565,7 @@ Principais variáveis:
 
 | Variável | Exemplo local |
 |---|---|
-| `ConnectionStrings__RelatoriosDb` | `Host=relatorio-db;Port=5432;Database=transporte_escolar_relatorios;Username=postgres;Password=postgres` |
+| `ConnectionStrings__RelatoriosDb` | `Server=relatorio-db;Port=3306;Database=transporte_escolar_relatorios;User=relatorio_user;Password=relatorio_pass;SslMode=None` |
 | `ConnectionStrings__Redis` | `redis:6379` |
 | `PresencaService__BaseUrl` | `http://attendance-service:8082` |
 | `RabbitMQ__Url` | URL AMQP completa, opcional |
@@ -578,9 +578,35 @@ Principais variáveis:
 Se `RabbitMQ__Url` for informada, ela tem prioridade sobre host, porta, usuário e
 senha.
 
+Na nuvem, o Terraform injeta MariaDB com Azure Files, CloudAMQP por AMQPS e
+Upstash Redis por TLS. As credenciais ficam em secrets do Azure Container Apps.
+O banco Upstash é criado manualmente e informado pela variável sensível
+`upstash_redis_connection_string`, no formato:
+
+```text
+ENDPOINT:PORT,password=TOKEN,ssl=true,abortConnect=false
+```
+
+No ambiente local, o Compose continua usando o container `redis:7.4-alpine`.
+Em ambos os ambientes o Redis é somente cache; indisponibilidade ou limpeza não
+remove o JSON permanente armazenado no MariaDB.
+
 ## Execução local com Docker
 
 Pré-requisito: Docker Desktop aberto e com o daemon em execução.
+
+Na primeira subida após a migração PostgreSQL → MariaDB, o Compose cria o volume
+novo `relatorio-mariadb-local-data`. O volume PostgreSQL anterior é preservado e
+não é reutilizado.
+
+Se quiser removê-lo manualmente depois de confirmar a migração:
+
+```bash
+docker volume ls | grep relatorio-db-local-data
+docker volume rm sistemasdistribuidos_relatorio-db-local-data
+```
+
+Essa remoção é opcional.
 
 Na raiz de `Sistemas distribuidos`:
 
@@ -603,7 +629,7 @@ Endereços:
 | API Gateway | `http://localhost:8080` |
 | Report direto | `http://localhost:8083` |
 | RabbitMQ Management | `http://localhost:15672` |
-| PostgreSQL | `localhost:5433` |
+| MariaDB do Report | `localhost:3308` |
 | Redis | `localhost:6379` |
 
 RabbitMQ local:
@@ -612,6 +638,24 @@ RabbitMQ local:
 usuário: admin
 senha: admin123
 ```
+
+## Health checks
+
+| Endpoint | Verificações | Resultado |
+|---|---|---|
+| `/health/live` | processo ASP.NET ativo | `200` enquanto o processo responde |
+| `/health/ready` | MariaDB, RabbitMQ e Redis | `503` se MariaDB/RabbitMQ falhar; Redis degradado mantém `200` |
+| `/health` | alias de readiness | mesmo comportamento de `/health/ready` |
+
+Exemplo:
+
+```bash
+curl http://localhost:8083/health/ready
+```
+
+O retorno JSON apresenta o estado e a duração de cada dependência. Se o Redis
+estiver fora, o estado geral será `Degraded`, mas a API continuará consultando o
+MariaDB. MariaDB e RabbitMQ são dependências obrigatórias.
 
 ## Como demonstrar a fila
 
@@ -705,7 +749,6 @@ Os testes cobrem:
 - dispatcher e worker estão no mesmo processo/contêiner;
 - o padrão atual de publicação é banco + dispatcher, mas ainda não usa uma
   tabela Outbox com confirmação transacional do broker;
-- não existe endpoint HTTP dedicado de health check no Report;
 - métricas técnicas podem ser ampliadas com OpenTelemetry, Prometheus e Grafana.
 
 Possíveis próximas evoluções:
@@ -714,5 +757,4 @@ Possíveis próximas evoluções:
 - implementar Outbox Pattern completo;
 - consumir eventos de rota;
 - adicionar tracing distribuído usando `X-Correlation-Id`;
-- adicionar endpoint de health para PostgreSQL, RabbitMQ e Redis;
 - criar métricas de duração, falhas, retentativas e tamanho da fila.

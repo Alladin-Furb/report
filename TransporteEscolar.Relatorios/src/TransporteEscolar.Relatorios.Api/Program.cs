@@ -11,6 +11,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddReportHealthChecks();
 
 builder.Services.AddScoped<IRelatorioMensalService, RelatorioMensalService>();
 builder.Services.AddScoped<IFrequenciaAlunoService, FrequenciaAlunoService>();
@@ -40,5 +41,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthorization();
 app.MapControllers();
+app.MapReportHealthChecks();
 
 app.Run();

@@ -23,8 +23,7 @@ public class RelatoriosDbContext : DbContext
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Nome).HasMaxLength(200).IsRequired();
             entity.HasIndex(x => x.ExternalId)
-                .IsUnique()
-                .HasFilter("\"ExternalId\" <> 0");
+                .IsUnique();
         });
 
         modelBuilder.Entity<PresencaHistorica>(entity =>
@@ -63,7 +62,7 @@ public class RelatoriosDbContext : DbContext
                 .HasConversion<string>()
                 .HasMaxLength(20)
                 .IsRequired();
-            entity.Property(x => x.ResultadoJson).HasColumnType("jsonb");
+            entity.Property(x => x.ResultadoJson).HasColumnType("longtext");
             entity.Property(x => x.Erro).HasMaxLength(2000);
             entity.Property(x => x.PapelSolicitante).HasMaxLength(30).IsRequired();
             entity.HasIndex(x => x.Status);

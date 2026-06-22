@@ -21,7 +21,15 @@ public static class DependencyInjection
 
         services.AddDbContext<RelatoriosDbContext>(options =>
             options
-                .UseNpgsql(connectionString)
+                .UseMySql(
+                    connectionString,
+                    new MariaDbServerVersion(new Version(11, 2)),
+                    mysql => mysql
+                        .EnableRetryOnFailure(
+                            maxRetryCount: 5,
+                            maxRetryDelay: TimeSpan.FromSeconds(10),
+                            errorNumbersToAdd: null)
+                        .CommandTimeout(30))
                 .ConfigureWarnings(warnings =>
                     warnings.Ignore(RelationalEventId.PendingModelChangesWarning)));
 

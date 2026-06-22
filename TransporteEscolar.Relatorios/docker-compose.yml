@@ -6,34 +6,42 @@ services:
     ports:
       - "8083:8080"
     environment:
-      - ConnectionStrings__RelatoriosDb=Host=postgres;Port=5432;Database=transporte_escolar_relatorios;Username=postgres;Password=postgres
+      - ConnectionStrings__RelatoriosDb=Server=mariadb;Port=3306;Database=transporte_escolar_relatorios;User=relatorio_user;Password=relatorio_pass;SslMode=None
       - ConnectionStrings__Redis=redis:6379
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
       - RabbitMQ__Username=admin
       - RabbitMQ__Password=admin123
     depends_on:
-      postgres:
+      mariadb:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
       redis:
-        condition: service_healthy
+        condition: service_started
 
-  postgres:
-    image: postgres:17
-    ports:
-      - "5433:5432"
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=transporte_escolar_relatorios
-    volumes:
-      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health/ready"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 6
+
+  mariadb:
+    image: mariadb:11.2
+    ports:
+      - "3308:3306"
+    environment:
+      - MARIADB_ROOT_PASSWORD=root
+      - MARIADB_DATABASE=transporte_escolar_relatorios
+      - MARIADB_USER=relatorio_user
+      - MARIADB_PASSWORD=relatorio_pass
+    volumes:
+      - mariadbdata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
-      timeout: 3s
+      timeout: 5s
       retries: 5
 
   rabbitmq:
@@ -63,3 +71,4 @@ services:
 
 volumes:
   pgdata:
+  mariadbdata:
