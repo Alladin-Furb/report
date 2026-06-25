@@ -102,7 +102,7 @@ public class GeradorRelatorioService : IGeradorRelatorioService
                     var aluno = alunos.GetValueOrDefault(x.AlunoId);
                     return new PresencaDetalhadaDto
                     {
-                        AlunoExternalId = aluno?.ExternalId ?? 0,
+                        AlunoExternalId = aluno?.ExternalId ?? Guid.Empty,
                         NomeAluno = aluno?.Nome ?? "Aluno não encontrado",
                         Data = x.Data,
                         Situacao = x.ConfirmouPresenca

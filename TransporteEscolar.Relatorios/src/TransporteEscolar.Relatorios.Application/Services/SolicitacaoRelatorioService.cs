@@ -30,7 +30,7 @@ public class SolicitacaoRelatorioService : ISolicitacaoRelatorioService
         int ano,
         int mes,
         string papelSolicitante,
-        long? profileIdSolicitante,
+        Guid? profileIdSolicitante,
         string urlConsulta,
         CancellationToken cancellationToken = default)
     {
@@ -65,7 +65,7 @@ public class SolicitacaoRelatorioService : ISolicitacaoRelatorioService
     public async Task<ConsultaRelatorioDto> ConsultarAsync(
         Guid relatorioId,
         string papelSolicitante,
-        long? profileIdSolicitante,
+        Guid? profileIdSolicitante,
         CancellationToken cancellationToken = default)
     {
         var cacheado = await _cache.ObterAsync(relatorioId, cancellationToken);
@@ -91,7 +91,7 @@ public class SolicitacaoRelatorioService : ISolicitacaoRelatorioService
 
     public async Task<IReadOnlyCollection<ConsultaRelatorioDto>> ListarAsync(
         string papelSolicitante,
-        long? profileIdSolicitante,
+        Guid? profileIdSolicitante,
         CancellationToken cancellationToken = default)
     {
         ValidarPapel(papelSolicitante);
@@ -104,7 +104,7 @@ public class SolicitacaoRelatorioService : ISolicitacaoRelatorioService
         Guid relatorioId,
         string formato,
         string papelSolicitante,
-        long? profileIdSolicitante,
+        Guid? profileIdSolicitante,
         CancellationToken cancellationToken = default)
     {
         var solicitacao = await ObterEValidarAsync(
@@ -122,7 +122,7 @@ public class SolicitacaoRelatorioService : ISolicitacaoRelatorioService
     private async Task<SolicitacaoRelatorio> ObterEValidarAsync(
         Guid relatorioId,
         string papelSolicitante,
-        long? profileIdSolicitante,
+        Guid? profileIdSolicitante,
         CancellationToken cancellationToken)
     {
         var solicitacao = await _repository.ObterPorIdAsync(relatorioId, cancellationToken)
@@ -138,7 +138,7 @@ public class SolicitacaoRelatorioService : ISolicitacaoRelatorioService
     private static void ValidarCriacao(
         TipoRelatorio tipo,
         string papelSolicitante,
-        long? profileIdSolicitante)
+        Guid? profileIdSolicitante)
     {
         ValidarPapel(papelSolicitante);
         if (papelSolicitante == RoleAluno)
@@ -154,9 +154,9 @@ public class SolicitacaoRelatorioService : ISolicitacaoRelatorioService
 
     private static void ValidarAcesso(
         string tipo,
-        long? proprietario,
+        Guid? proprietario,
         string papelSolicitante,
-        long? profileIdSolicitante)
+        Guid? profileIdSolicitante)
     {
         ValidarPapel(papelSolicitante);
         if (papelSolicitante != RoleAluno)

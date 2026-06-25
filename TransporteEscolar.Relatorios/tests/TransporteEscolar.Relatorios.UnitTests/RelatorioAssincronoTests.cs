@@ -173,7 +173,7 @@ public class RelatorioAssincronoTests
 
         public Task<IReadOnlyCollection<SolicitacaoRelatorio>> ListarRecentesAsync(
             string papelSolicitante,
-            long? profileIdSolicitante,
+            Guid? profileIdSolicitante,
             int limite,
             CancellationToken cancellationToken = default)
         {

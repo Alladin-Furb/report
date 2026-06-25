@@ -16,7 +16,7 @@ public class PresencasDetalhadasRelatorioDto
 
 public class PresencaDetalhadaDto
 {
-    public long AlunoExternalId { get; set; }
+    public Guid AlunoExternalId { get; set; }
     public string NomeAluno { get; set; } = string.Empty;
     public DateOnly Data { get; set; }
     public string Situacao { get; set; } = string.Empty;

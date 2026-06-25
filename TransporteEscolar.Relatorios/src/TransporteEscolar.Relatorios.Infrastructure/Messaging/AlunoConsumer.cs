@@ -84,7 +84,7 @@ public class AlunoConsumer : BackgroundService
                     json,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                if (dto is null || dto.Id == 0)
+                if (dto is null || dto.Id == Guid.Empty)
                 {
                     await channel.BasicAckAsync(ea.DeliveryTag, false);
                     return;

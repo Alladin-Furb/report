@@ -6,7 +6,7 @@ public class SolicitacaoRelatorio
     public TipoRelatorio Tipo { get; set; } = TipoRelatorio.ResumoMensal;
     public int Ano { get; set; }
     public int Mes { get; set; }
-    public long? ProfileIdSolicitante { get; set; }
+    public Guid? ProfileIdSolicitante { get; set; }
     public string PapelSolicitante { get; set; } = string.Empty;
     public StatusSolicitacaoRelatorio Status { get; set; } = StatusSolicitacaoRelatorio.Pendente;
     public string? ResultadoJson { get; set; }

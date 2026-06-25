@@ -14,7 +14,7 @@ public interface ISolicitacaoRelatorioRepository
 
     Task<IReadOnlyCollection<SolicitacaoRelatorio>> ListarRecentesAsync(
         string papelSolicitante,
-        long? profileIdSolicitante,
+        Guid? profileIdSolicitante,
         int limite,
         CancellationToken cancellationToken = default);
 

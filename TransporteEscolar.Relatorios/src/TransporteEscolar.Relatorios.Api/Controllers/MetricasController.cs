@@ -24,12 +24,12 @@ public class MetricasController : ControllerBase
     [ProducesResponseType(typeof(FrequenciaAlunoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetMinhaFrequencia(
-        [FromHeader(Name = "X-Profile-Id")] long? profileId,
+        [FromHeader(Name = "X-Profile-Id")] Guid? profileId,
         [FromQuery] int ano,
         [FromQuery] int mes,
         CancellationToken cancellationToken)
     {
-        if (profileId is null or <= 0)
+        if (profileId is null || profileId == Guid.Empty)
             return StatusCode(StatusCodes.Status403Forbidden);
 
         if (ano <= 0 || mes is < 1 or > 12)
