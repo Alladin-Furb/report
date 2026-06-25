@@ -11,7 +11,7 @@ public interface IFrequenciaAlunoService
         CancellationToken cancellationToken = default);
 
     Task<FrequenciaAlunoDto> CalcularPorExternalIdAsync(
-        long externalId,
+        Guid externalId,
         int ano,
         int mes,
         CancellationToken cancellationToken = default);

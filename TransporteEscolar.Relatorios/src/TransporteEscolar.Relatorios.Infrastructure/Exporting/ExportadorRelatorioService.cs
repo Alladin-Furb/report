@@ -99,7 +99,7 @@ public class ExportadorRelatorioService : IExportadorRelatorioService
             lista.Select(x => new[]
             {
                 x.NomeAluno,
-                x.AlunoExternalId.ToString(PtBr),
+                x.AlunoExternalId.ToString(),
                 x.DiasConfirmados.ToString(PtBr),
                 x.DiasCancelados.ToString(PtBr),
                 x.PercentualFrequencia.ToString("N2", PtBr)
@@ -113,7 +113,7 @@ public class ExportadorRelatorioService : IExportadorRelatorioService
         relatorio.Presencas.Select(x => new[]
         {
             x.NomeAluno,
-            x.AlunoExternalId.ToString(PtBr),
+            x.AlunoExternalId.ToString(),
             x.Data.ToString("dd/MM/yyyy", PtBr),
             x.Situacao,
             FormatarDataHora(x.DataConfirmacao),

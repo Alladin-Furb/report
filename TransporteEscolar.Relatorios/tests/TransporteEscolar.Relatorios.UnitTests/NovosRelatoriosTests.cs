@@ -10,6 +10,8 @@ namespace TransporteEscolar.Relatorios.UnitTests;
 
 public class NovosRelatoriosTests
 {
+    private static readonly Guid AlunoExternalId = Guid.Parse("00000000-0000-0000-0000-000000000007");
+
     [Theory]
     [InlineData(TipoRelatorio.ResumoMensal, typeof(RelatorioMensalDto))]
     [InlineData(TipoRelatorio.FrequenciaAlunos, typeof(FrequenciaAlunosRelatorioDto))]
@@ -24,7 +26,7 @@ public class NovosRelatoriosTests
             Tipo = tipo,
             Ano = 2026,
             Mes = 6,
-            ProfileIdSolicitante = 7
+            ProfileIdSolicitante = AlunoExternalId
         });
 
         Assert.IsType(tipoEsperado, resultado);
@@ -57,7 +59,7 @@ public class NovosRelatoriosTests
         var aluno = new AlunoSnapshot
         {
             Id = Guid.NewGuid(),
-            ExternalId = 7,
+            ExternalId = AlunoExternalId,
             Nome = "Helena",
             Ativo = true
         };
@@ -116,7 +118,7 @@ public class NovosRelatoriosTests
             Task.FromResult(itens.FirstOrDefault(x => x.Id == alunoId));
         public Task<IReadOnlyCollection<AlunoSnapshot>> ObterTodosAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyCollection<AlunoSnapshot>>(itens);
-        public Task<AlunoSnapshot?> BuscarPorExternalIdAsync(long externalId, CancellationToken cancellationToken = default) =>
+        public Task<AlunoSnapshot?> BuscarPorExternalIdAsync(Guid externalId, CancellationToken cancellationToken = default) =>
             Task.FromResult(itens.FirstOrDefault(x => x.ExternalId == externalId));
         public Task AdicionarAsync(AlunoSnapshot aluno, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task AtualizarAsync(AlunoSnapshot aluno, CancellationToken cancellationToken = default) => Task.CompletedTask;

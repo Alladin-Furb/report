@@ -12,7 +12,7 @@ public interface IAlunoSnapshotRepository
         CancellationToken cancellationToken = default);
 
     Task<AlunoSnapshot?> BuscarPorExternalIdAsync(
-        long externalId,
+        Guid externalId,
         CancellationToken cancellationToken = default);
 
     Task AdicionarAsync(

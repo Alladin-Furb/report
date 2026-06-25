@@ -10,25 +10,25 @@ public interface ISolicitacaoRelatorioService
         int ano,
         int mes,
         string papelSolicitante,
-        long? profileIdSolicitante,
+        Guid? profileIdSolicitante,
         string urlConsulta,
         CancellationToken cancellationToken = default);
 
     Task<ConsultaRelatorioDto> ConsultarAsync(
         Guid relatorioId,
         string papelSolicitante,
-        long? profileIdSolicitante,
+        Guid? profileIdSolicitante,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyCollection<ConsultaRelatorioDto>> ListarAsync(
         string papelSolicitante,
-        long? profileIdSolicitante,
+        Guid? profileIdSolicitante,
         CancellationToken cancellationToken = default);
 
     Task<ArquivoRelatorioDto> BaixarAsync(
         Guid relatorioId,
         string formato,
         string papelSolicitante,
-        long? profileIdSolicitante,
+        Guid? profileIdSolicitante,
         CancellationToken cancellationToken = default);
 }

@@ -33,7 +33,7 @@ public class AlunoSnapshotRepository : IAlunoSnapshotRepository
     }
 
     public async Task<AlunoSnapshot?> BuscarPorExternalIdAsync(
-    long externalId,
+    Guid externalId,
     CancellationToken cancellationToken = default)
     {
         return await _context.Alunos

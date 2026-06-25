@@ -104,9 +104,9 @@ public class RelatoriosController : ControllerBase
         Request.Headers["X-User-Role"].FirstOrDefault()
         ?? throw new ForbiddenException("Cabeçalho de papel não informado.");
 
-    private long? ObterProfileId()
+    private Guid? ObterProfileId()
     {
         var valor = Request.Headers["X-Profile-Id"].FirstOrDefault();
-        return long.TryParse(valor, out var profileId) ? profileId : null;
+        return Guid.TryParse(valor, out var profileId) ? profileId : null;
     }
 }

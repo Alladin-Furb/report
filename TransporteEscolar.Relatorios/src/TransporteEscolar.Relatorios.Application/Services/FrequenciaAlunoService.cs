@@ -45,7 +45,7 @@ public class FrequenciaAlunoService : IFrequenciaAlunoService
         return new FrequenciaAlunoDto
         {
             AlunoId = alunoId,
-            AlunoExternalId = aluno?.ExternalId ?? 0,
+            AlunoExternalId = aluno?.ExternalId ?? Guid.Empty,
             NomeAluno = aluno?.Nome ?? "Aluno não encontrado",
             DiasConfirmados = diasConfirmados,
             DiasCancelados = diasCancelados,
@@ -54,7 +54,7 @@ public class FrequenciaAlunoService : IFrequenciaAlunoService
     }
 
     public async Task<FrequenciaAlunoDto> CalcularPorExternalIdAsync(
-        long externalId,
+        Guid externalId,
         int ano,
         int mes,
         CancellationToken cancellationToken = default)

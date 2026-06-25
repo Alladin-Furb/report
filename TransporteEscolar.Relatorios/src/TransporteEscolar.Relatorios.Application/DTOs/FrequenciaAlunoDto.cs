@@ -3,7 +3,7 @@
 public class FrequenciaAlunoDto
 {
     public Guid AlunoId { get; set; }
-    public long AlunoExternalId { get; set; }
+    public Guid AlunoExternalId { get; set; }
     public string NomeAluno { get; set; } = string.Empty;
     public int DiasConfirmados { get; set; }
     public int DiasCancelados { get; set; }

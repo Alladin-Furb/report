@@ -22,7 +22,7 @@ public class ConsultaRelatorioDto
 {
     public Guid RelatorioId { get; set; }
     public string Tipo { get; set; } = string.Empty;
-    public long? ProfileIdSolicitante { get; set; }
+    public Guid? ProfileIdSolicitante { get; set; }
     public int Ano { get; set; }
     public int Mes { get; set; }
     public string Status { get; set; } = string.Empty;
